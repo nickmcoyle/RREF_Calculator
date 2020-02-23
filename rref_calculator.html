@@ -1,0 +1,410 @@
+<!DOCTYPE HTML>
+<HTML lang="en-US">
+
+<head>
+	<meta charset='utf-8'>
+	<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+	<meta name='viewport' content='width=device-width, initial-scale=1'>
+	<style>
+		@media screen and (min-width: 980px)
+		/* Desktop */
+			{
+			body {
+				font-size: 1.2em;
+			}
+
+			#wrapper {
+				max-width: 80%;
+				margin: 0 auto;
+			}
+
+			.coefficientInput {
+				width: 6em;
+			}
+		}
+
+		@media screen and (max-width: 979px)
+		/* Tablet */
+			{
+			body {
+				font-size: 1em;
+			}
+
+			#wrapper {
+				max-width: 80%;
+				margin: 0 auto;
+			}
+
+			.coefficientInput {
+				width: 4em;
+			}
+		}
+
+		@media screen and (max-width: 500px)
+		/* Mobile */
+			{
+			body {
+				font-size: .8em;
+			}
+
+			#wrapper {
+				max-width: 90%;
+				margin: 0 auto;
+			}
+
+			.coefficientInput {
+				width: 3em;
+			}
+		}
+
+		h1 {
+			text-align: center;
+		}
+
+		#coefficientMatrixForm {
+			padding: 10px;
+			border: 1px solid #474746;
+		}
+
+		.numberDropdown {
+			border: 1px solid gray;
+			border-radius: 5px;
+		}
+
+		.coefficientInput {
+			padding: 3px;
+			margin: 3px;
+			border: 1px solid #474746;
+			border-radius: 5px;
+		}
+
+		.roundBtn {
+			color: #474746;
+			background-color: #ffffff;
+			border: 1px solid #474746;
+			border-radius: 5px;
+		}
+
+		.roundBtn:hover {
+			color: #ffffff;
+			background-color: #000;
+
+		}
+
+		#clearBtn {
+			margin-left: 20%;
+		}
+
+		#results {
+			display: inline-block;
+		}
+
+		#rrefOutput {
+			display: none;
+			padding: 5px;
+			margin: 3px;
+			border: 1px solid #474746;
+			border-radius: 5px;
+		}
+
+		#determinantOutput {
+			display: inline-block;
+			margin-left: 20px;
+		}
+	</style>
+</head>
+
+<BODY>
+	<div id="wrapper">
+		<h1>Reduced Row Echelon Form (RREF) Calculator</h1>
+
+		<form action="" id="coefficientMatrixForm">
+			Choose the dimension of the matrix:
+			<select class="numberDropdown" id="rowsSelector">
+				<option>1</option>
+				<option>2</option>
+				<option selected>3</option>
+				<option>4</option>
+				<option>5</option>
+				<option>6</option>
+				<option>7</option>
+				<option>8</option>
+				<option>9</option>
+				<option>10</option>
+			</select>
+			x
+			<select class="numberDropdown" id="columnsSelector">
+				<option>1</option>
+				<option>2</option>
+				<option selected>3</option>
+				<option>4</option>
+				<option>5</option>
+				<option>6</option>
+				<option>7</option>
+				<option>8</option>
+				<option>9</option>
+				<option>10</option>
+			</select>
+			<br>
+			<br>
+			Enter the elements of the matrix
+			<br>
+			<br>
+			<div id="coefficientInputs"></div>
+			<br>
+			<input type="submit" class="roundBtn" id="calculateRREFBtn" value="submit">
+			<input type="submit" class="roundBtn" id="clearBtn" value="clear">
+		</form>
+		<br>
+		<h4>Result</h4>
+		<div id="results"></div>
+		<div id="rrefOutput"></div>
+		<div id="determinantOutput"></div>
+
+	</div>
+	<SCRIPT type='text/javascript'>
+		var matrix = []; //store the values of the coefficient matrix A
+		var matrixRREF = []; //store the values of the coefficient matrix A in reduced row echelon form
+		var numberRows;
+		var numberColumns;
+
+		//values used for computing the determinant 
+		//function toReducedRowEchelonForm(A) updates values of row interchanges and scalar operations	   
+		var numberRowInterchangesPerformed = 0; //the number of row interchanges performed
+		var scalarOperationsPerformed = []; //all the scalars used in row multiplication
+
+		//the UI elements to select number of rows and columns in the matrix
+		var rowsSelector = document.getElementById("rowsSelector");
+		var columnsSelector = document.getElementById("columnsSelector");
+
+		numberRows = rowsSelector.options[rowsSelector.selectedIndex].text;
+		numberColumns = columnsSelector.options[columnsSelector.selectedIndex].text;
+
+		setMatrixFieldsUI();
+
+		//a function to add or remove fields from the UI for entering the coefficients of the matrix A
+		function setMatrixFieldsUI() {
+			var html;
+			var matrixFields = document.getElementById("coefficientInputs");
+			var coefficient;
+
+			matrixFields.innerHTML = "";
+
+			for (var row = 1; row <= numberRows; ++row) {
+				for (var column = 1; column <= numberColumns; ++column) {
+					coefficient = getCoefficientFromMatrix(row, column);
+					html = "<input class='coefficientInput' type='number' value='" + coefficient + "'id='row" + row + "column" + column + "'>";
+					matrixFields.innerHTML += html;
+				}
+				matrixFields.innerHTML += "<br>";
+			}
+		}
+
+		rowsSelector.onchange = function () {
+			numberRows = rowsSelector.options[rowsSelector.selectedIndex].text;
+			setMatrixFieldsUI();
+		};
+
+		columnsSelector.onchange = function () {
+			numberColumns = columnsSelector.options[columnsSelector.selectedIndex].text;
+			setMatrixFieldsUI();
+		};
+
+		function clearResults() {
+			var rrefOutput = document.getElementById("rrefOutput");
+			rrefOutput.innerHTML = "";
+			rrefOutput.style.display = "none";
+			document.getElementById("determinantOutput").innerHTML = "";
+		}
+
+		//a function to add a click handler to the clear button in the UI
+		document.getElementById("clearBtn").addEventListener("click", function () {
+			//stop the form from refreshing the page
+			event.preventDefault();
+			matrix = [];
+			setMatrixFieldsUI();
+			clearResults();
+		});
+
+		//a function to add a click handler to the RREF calculator button in the UI
+		document.getElementById("calculateRREFBtn").addEventListener("click", function () {
+			//stop the form from refreshing the page
+			event.preventDefault();
+
+			//get the values of the coefficient matrix, A which is a global variable			
+			getCoefficientsFromUI();
+
+			//calculate rref(A)
+			//deep copy matrix so it will not be affected by the row operations below
+			//copy matrix into matrixRREF	
+			matrixRREF = [];
+			for (var row = 0; row < numberRows; ++row) {
+				var tempRow = [];
+				for (var column = 0; column < numberColumns; ++column) {
+					tempRow.push(matrix[row][column]);
+				}
+				matrixRREF.push(tempRow);
+			}
+			toReducedRowEchelonForm(matrixRREF);
+
+			document.getElementById("results").innerHTML = "rref(A) = ";
+
+			//get DOM element to append the result to
+			var resultDiv = document.getElementById("rrefOutput");
+
+			//clear the result div
+			clearResults();
+
+			//populate the output div with the rows from the matrix A after finding rref(A)					
+			for (var row = 0; row < matrixRREF.length; ++row) {
+				for (var column = 0; column < matrixRREF[row].length; ++column) {
+					resultDiv.innerHTML += matrixRREF[row][column] + " ";
+				}
+				resultDiv.innerHTML += "<br>";
+			}
+			//change display from hidden to visible
+			resultDiv.style.display = "inline-block";
+
+			var determinant_of_A;
+			//we can only compute the determinant for square matrices
+			if (numberRows != numberColumns) {
+				determinant_of_A = "non-square matrix";
+			} else {
+				determinant_of_A = computeDeterminant();
+			}
+			document.getElementById("determinantOutput").innerHTML = "det(A) = " + determinant_of_A;
+		});
+
+
+		//a function to get the values of the coefficient matrix from the input fields in the UI
+		function getCoefficientsFromUI() {
+			var row;
+			var column;
+			var coefficientValue;
+			var coefficientQuerySelector; //javascript selector to get the value of the input field from the UI		
+			matrix = [];
+			var tempRow;
+			//loop through each row getting each column coefficient and finally add to a 1d array
+			//index of rows and columns in the UI begin with 1 not 0 following mathematical notation
+			for (row = 1; row <= numberRows; ++row) {
+				tempRow = [];
+				for (column = 1; column <= numberColumns; ++column) {
+					coefficientQuerySelector = "row" + row + "column" + column;
+					coefficientValue = document.getElementById(coefficientQuerySelector).value;
+					tempRow.push(coefficientValue);
+				}
+				//append temp array containing the row to the matrix
+				matrix.push(tempRow);
+			}
+		}
+
+
+		//a function to get a value from the coefficient matrix at a specified row and column
+		//returns 0 if the matrix has no value at the row and column passed to the function
+		function getCoefficientFromMatrix(row, column) {
+			var result;
+			row -= 1; column -= 1; //coefficients in the UI are 1 indexed but the matrix in memory is 0 indexed
+			//if the UI is adding rows or columns, it will request a value that isnt there so return 0
+			if (matrix == null || row > matrix.length) {
+				result = 0;
+			} else if (matrix[row] == null || column >= matrix[row].length) {
+				result = 0;
+			} else {
+				result = matrix[row][column];
+			}
+
+			return result;
+		}
+
+
+		//general algorithm credited here https://rosettacode.org/wiki/Reduced_row_echelon_form
+		//this function alters the matrix A passed to it
+		function toReducedRowEchelonForm(A) {
+			//values used for computing the determinant
+			numberRowInterchangesPerformed = 0;
+			scalarOperationsPerformed = [];
+
+			//lead is index of the coefficient being considered, initially set to index of A at row 1 column 1
+			var lead = 0;
+
+			for (var r = 0; r < numberRows; ++r) {
+				if (numberColumns <= lead) {
+					return;
+				}
+				var i = r;
+				//scan through the column until finding a non-zero entry and then breaking the while loop
+				//or getting to the end of the matrix and returning
+				while (A[i][lead] == 0) {
+					++i;
+					//if reached the end of the column then increment lead to begin scanning the next column
+					if (numberRows == i) {
+						i = r;
+						++lead;
+						//if lead == numberColumns it means all columns have been scanned and all values are 0
+						if (numberColumns == lead) {
+							return;
+						}
+					}
+				}
+				//row interchange (swap)
+				if (i != r) {
+					var tmp = A[i];
+					A[i] = A[r];
+					A[r] = tmp;
+					++numberRowInterchangesPerformed;
+				}
+				//scale a row by dividing all coefficients by the first non-zero entry
+				//this achieves a leading 1 in the row
+				var val = A[r][lead];
+				for (var j = 0; j < numberColumns; ++j) {
+					A[r][j] /= val;
+					//only add the scalar operation to the list of operations one time
+					if (j == 0) {
+						scalarOperationsPerformed.push(val);
+					}
+				}
+
+				//perform row subtraction
+				for (var i = 0; i < numberRows; ++i) {
+					if (i == r) continue;
+					val = A[i][lead];
+					for (var j = 0; j < numberColumns; ++j) {
+						A[i][j] -= val * A[r][j];
+					}
+				}
+				++lead;
+			}
+			return;
+		}
+
+		//a function to calculate the determinant using the product of
+		//the diagonal entries of the matrix 
+		//and the number of row interchanges
+		//and the scalars used in row multiplication
+		//after calling the toReducedRowEchelonForm() function
+		function computeDeterminant() {
+			var determinant = 1;
+			for (var row = 0; row < numberRows; ++row) {
+				for (var column = 0; column < numberColumns; ++column) {
+					//get the product of the diagonals
+					if (row == column) determinant *= matrixRREF[row][column];
+				}
+			}
+
+			//if numberRowInterchangesPerformed is odd, we must multiply the determinant by -1
+			if (numberRowInterchangesPerformed % 2 == 1) {
+				determinant *= -1;
+			}
+
+			//the determinant is also scaled by any scalars used during row reduction
+			for (var i = 0; i < scalarOperationsPerformed.length; ++i) {
+				determinant *= scalarOperationsPerformed[i];
+			}
+
+			return determinant;
+		}
+
+	</SCRIPT>
+</BODY>
+
+</HTML>
