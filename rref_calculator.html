@@ -107,6 +107,11 @@
 			border-radius: 5px;
 		}
 
+		#rrefTable {			
+			border-spacing: 15px 5px;
+  			table-layout: auto;
+		}
+
 		#determinantOutput {
 			display: inline-block;
 			margin-left: 20px;
@@ -193,7 +198,7 @@
 			for (var row = 1; row <= numberRows; ++row) {
 				for (var column = 1; column <= numberColumns; ++column) {
 					coefficient = getCoefficientFromMatrix(row, column);
-					html = "<input class='coefficientInput' type='number' value='" + coefficient + "'id='row" + row + "column" + column + "'>";
+					html = "<input class='coefficientInput' onClick='this.select();' value='" + coefficient + "'type='number' id='row" + row + "column" + column + "'>";
 					matrixFields.innerHTML += html;
 				}
 				matrixFields.innerHTML += "<br>";
@@ -250,18 +255,30 @@
 			document.getElementById("results").innerHTML = "rref(A) = ";
 
 			//get DOM element to append the result to
-			var resultDiv = document.getElementById("rrefOutput");
-
+			var resultDiv = document.getElementById("rrefOutput");			
+			
 			//clear the result div
-			clearResults();
-
-			//populate the output div with the rows from the matrix A after finding rref(A)					
+			clearResults();			
+			
+			//populate the output table with the rows from the matrix A after finding rref(A)							
+			var tbl = document.createElement('table');
+			tbl.setAttribute('id', 'rrefTable');
+			var tbdy = document.createElement('tbody');
 			for (var row = 0; row < matrixRREF.length; ++row) {
+				var tr = document.createElement('tr');
 				for (var column = 0; column < matrixRREF[row].length; ++column) {
-					resultDiv.innerHTML += matrixRREF[row][column] + " ";
+					var td = document.createElement('td');
+					var valueString = "";
+					var value = Math.round((matrixRREF[row][column] + 0.00001) * 1000) / 1000;
+					valueString += value.toString();																			
+					td.appendChild(document.createTextNode(valueString));
+					tr.appendChild(td)					
 				}
-				resultDiv.innerHTML += "<br>";
+				tbdy.appendChild(tr);
 			}
+			tbl.appendChild(tbdy);
+			resultDiv.appendChild(tbl);			
+
 			//change display from hidden to visible
 			resultDiv.style.display = "inline-block";
 
@@ -401,7 +418,7 @@
 				determinant *= scalarOperationsPerformed[i];
 			}
 
-			return determinant;
+			return Math.round(determinant);
 		}
 
 	</SCRIPT>
