@@ -167,8 +167,10 @@
 		<div id="determinantOutput"></div>
 
 	</div>
-	<SCRIPT type='text/javascript'>
+	<SCRIPT type='text/javascript'>		
 		var matrix = []; //store the values of the coefficient matrix A
+		//a good test matrix because it shows if you have floating point arithmetic errors, the rref of this should be [101, 011, 000, 000]
+		//var matrix = [[10,1,11], [3,7,10], [-2,6,4], [8,2,10]]; 
 		var matrixRREF = []; //store the values of the coefficient matrix A in reduced row echelon form
 		var numberRows;
 		var numberColumns;
@@ -268,9 +270,10 @@
 				var tr = document.createElement('tr');
 				for (var column = 0; column < matrixRREF[row].length; ++column) {
 					var td = document.createElement('td');
-					var valueString = "";
-					var value = Math.round((matrixRREF[row][column] + 0.00001) * 1000) / 1000;
-					valueString += value.toString();																			
+					var valueString = "";					
+					var value = matrixRREF[row][column];	
+					//values are floats with 12 precision so to drop trailing zeros, solution is to cast to number and back to string									
+					valueString += Number(value).toString();																			
 					td.appendChild(document.createTextNode(valueString));
 					tr.appendChild(td)					
 				}
@@ -336,7 +339,7 @@
 
 		//general algorithm credited here https://rosettacode.org/wiki/Reduced_row_echelon_form
 		//this function alters the matrix A passed to it
-		function toReducedRowEchelonForm(A) {
+		function toReducedRowEchelonForm(A) {				
 			//values used for computing the determinant
 			numberRowInterchangesPerformed = 0;
 			scalarOperationsPerformed = [];
@@ -344,7 +347,7 @@
 			//lead is index of the coefficient being considered, initially set to index of A at row 1 column 1
 			var lead = 0;
 
-			for (var r = 0; r < numberRows; ++r) {
+			for (var r = 0; r < numberRows; ++r) {				
 				if (numberColumns <= lead) {
 					return;
 				}
@@ -368,27 +371,32 @@
 					var tmp = A[i];
 					A[i] = A[r];
 					A[r] = tmp;
-					++numberRowInterchangesPerformed;
+					++numberRowInterchangesPerformed;					
 				}
 				//scale a row by dividing all coefficients by the first non-zero entry
 				//this achieves a leading 1 in the row
-				var val = A[r][lead];
+				var val = A[r][lead];				
 				for (var j = 0; j < numberColumns; ++j) {
+					//console.log("dividing value at r,c " + r+","+j+ " which is " + A[r][j] + " by " + val + " Result is " + (A[i][j]/val));
 					A[r][j] /= val;
+					//compensation for floating point errors in js
+					A[r][j]	= parseFloat(A[r][j]).toPrecision(12);				
 					//only add the scalar operation to the list of operations one time
 					if (j == 0) {
-						scalarOperationsPerformed.push(val);
+						scalarOperationsPerformed.push(val);												
 					}
-				}
-
+				}										
 				//perform row subtraction
 				for (var i = 0; i < numberRows; ++i) {
 					if (i == r) continue;
-					val = A[i][lead];
+					val = A[i][lead];					
 					for (var j = 0; j < numberColumns; ++j) {
+						//console.log("subtracting value at r,c " + i+","+j+ " which is " + A[i][j] + " by val*A[r][j] where val is " + val + " and A[r][j] is " + A[r][j] + " Result is " + Math.floor(((val*A[r][j]) * 100) / 100) );						
 						A[i][j] -= val * A[r][j];
+						//compensation for floating point errors in js
+						A[i][j]	= parseFloat(A[i][j]).toPrecision(12);					
 					}
-				}
+				}				
 				++lead;
 			}
 			return;
